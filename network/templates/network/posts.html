@@ -1,0 +1,81 @@
+{% extends "network/layout.html" %}
+
+{% block scripts %}
+
+        {% csrf_token %}
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelector('#save-post').addEventListener('click', submit_post); 
+            });
+
+            function submit_post() {
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                // get post text
+                const postContent =  document.querySelector('#post-content').value;                    
+               
+               // make API POST request
+                const request = new Request(
+                    '/posts',
+                    {headers: {'X-CSRFToken': csrftoken}}
+                );
+                fetch(request, {
+                    method: 'POST',
+                    mode: 'same-origin',
+                    body: JSON.stringify({
+                        post_content: postContent
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    // Print result
+                    console.log(result); 
+                    // reload page
+                    location.reload(); 
+                })
+                // Catch any errors and log them to the console
+                .catch(error => {
+                    console.log('Error:', error);
+                });             
+            }
+        </script>
+
+{% endblock %}
+
+{% block body %}
+        {% if user.is_authenticated %}
+            {# Button for new post modal #}
+            <button type="button" id="btn-create-post" class="btn btn-primary btn-lg btn-block btn-create-post" data-toggle="modal" data-target="#new-post-modal">Create new post</button>
+            {# New post modal #}
+            <div class="modal fade" id="new-post-modal" tabindex="-1" role="dialog" aria-labelledby="new-post-modal-label" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="new-post-modal-label">New post</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            {% csrf_token %} 
+                            <div class="form-group">
+                                <textarea class="form-control" id="post-content"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" id="save-post">Save changes</button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="posts">
+            {% block posts %}
+            {% endblock %}
+        </div>
+    </body>
+
+{% endblock %}
