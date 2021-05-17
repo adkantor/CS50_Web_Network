@@ -46,6 +46,33 @@ class PagesTestCase(TestCase):
         self.assertEqual(len(response.context["page_obj"]), 3)
 
 
+    def test_index_pagination(self):
+        # another create user
+        u4 = User.objects.create(username='u4')
+        # create more posts
+        for _ in range(25):
+            Post.objects.create(created_by=u4)
+
+        # Send get request to index page without parameter and store response
+        response = client.get("/")
+        # Make sure 10 posts are returned in the context
+        self.assertEqual(len(response.context["page_obj"]), 10)
+
+        # Send get request to index page for page 1 and store response
+        response = client.get("/?page=1")
+        # Make sure 10 posts are returned in the context
+        self.assertEqual(len(response.context["page_obj"]), 10)
+
+        # Send get request to index page for page 2 and store response
+        response = client.get("/?page=2")
+        # Make sure 10 posts are returned in the context
+        self.assertEqual(len(response.context["page_obj"]), 10)
+
+        # Send get request to index page for page 3 and store response
+        response = client.get("/?page=3")
+        # Make sure 8 posts are returned in the context
+        self.assertEqual(len(response.context["page_obj"]), 8)
+
 
 class PostTestCase(TestCase):
 
@@ -127,7 +154,10 @@ class PostTestCase(TestCase):
 
         all_posts = Post.get_all_posts()
 
-        self.assertEqual(list(all_posts), [p1, p2, p3])
+        self.assertEqual(len(all_posts), 3)
+        self.assertIn(p1, all_posts)
+        self.assertIn(p2, all_posts)
+        self.assertIn(p3, all_posts)
 
 
     def test_get_posts_of_followed_people(self):
@@ -140,17 +170,20 @@ class PostTestCase(TestCase):
         p3 = Post.objects.get(pk=3)
 
         posts1 = u1.get_posts_of_followed_people()
+        self.assertEqual(len(posts1), 1)
+        self.assertIn(p3, posts1)
+        
         posts2 = u2.get_posts_of_followed_people()
+        self.assertEqual(len(posts2), 2)
+
+        self.assertIn(p1, posts2)
+        self.assertIn(p2, posts2)
+        
         posts3 = u3.get_posts_of_followed_people()
-
-        self.assertEqual(list(posts1), [p3])
-        self.assertEqual(list(posts2), [p1, p2])
-        self.assertEqual(list(posts3), [])
+        self.assertEqual(len(posts3), 0)
+       
         
         
-        
-        
-
 class CreateNewPostTestCase(TestCase):
     
     def setUp(self):
