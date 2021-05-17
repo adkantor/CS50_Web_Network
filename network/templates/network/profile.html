@@ -32,7 +32,7 @@
                     </div>
                     <div class="col-md-3 text-center">
                         <div class="card-body">
-                            <h5 class="card-title">{{ p_user.followed_by.all.count }}</h5>
+                            <h5 class="card-title" id="followers">{{ p_user.followed_by.all.count }}</h5>
                             <p class="card-text"><small class="text-muted">Followers</small></p>                 
                         </div>
                     </div>
@@ -116,6 +116,7 @@
         <script type="text/javascript">            
             
             var btnFollow = document.querySelector('#btn-follow');
+            var headerFollowers = document.querySelector('#followers');
             
             document.addEventListener('DOMContentLoaded', function() {
                 const displayedUserId = JSON.parse(document.getElementById('displayedUserId').textContent);
@@ -145,6 +146,18 @@
                 btnFollow.className = (isFollowing ? 'btn btn-secondary' : 'btn btn-primary btn-block');
             }
 
+            function updateFollowers(isFollowing) {
+                const num_followers = parseInt(headerFollowers.textContent)
+                console.log(headerFollowers.textContent)
+                console.log(num_followers)
+                if (isFollowing) {
+                    headerFollowers.textContent = num_followers + 1;
+                } else {
+                    headerFollowers.textContent = num_followers - 1;
+                }
+                
+            }
+
 
             function toggleFollow(id, currentFollowStatus) {
                 
@@ -161,6 +174,8 @@
                 })
                 .then(response => {
                     if (response.ok) {
+                        // update followers' number
+                        updateFollowers(newFollowStatus);
                         // update button formatting
                         updateButton(newFollowStatus);
                         // add event listener
