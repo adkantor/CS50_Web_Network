@@ -35,6 +35,9 @@ class Post(models.Model):
     content = models.TextField()
     liked_by = models.ManyToManyField(User, blank=True, related_name='liked_posts')
 
+    def __str__(self):
+        return f'{self.created_by} - {self.content[:50]}'
+
     @staticmethod
     def get_all_posts():
         """ Returns all posts in reverse order """
