@@ -24,6 +24,10 @@ class User(AbstractUser):
             another_user.followed_by.remove(self)
             another_user.save()
 
+    def get_posts_of_followed_people(self):
+        """ Returns posts posted by people followed by this user, in reversed order. """
+        return Post.objects.filter(created_by__in=self.following.all()).order_by('-created_time')
+
 class Post(models.Model):
     """ Class to represent a post. """
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts', null=True)
@@ -31,4 +35,7 @@ class Post(models.Model):
     content = models.TextField()
     liked_by = models.ManyToManyField(User, blank=True, related_name='liked_posts')
 
-    
+    @staticmethod
+    def get_all_posts():
+        """ Returns all posts in reverse order """
+        return Post.objects.all().order_by('-created_time')

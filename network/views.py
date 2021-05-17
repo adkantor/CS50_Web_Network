@@ -12,10 +12,25 @@ from .models import User, Post
 
 
 def index(request):
-    """ Displays all posts plus form to add new post. """
+    """ Displays all posts plus button to add new post. """
     
     # get list of all posts and paginate (10 posts / page)
-    post_list = Post.objects.all().order_by('-created_time')
+    post_list = Post.get_all_posts()
+    paginator = Paginator(post_list, 10)
+    
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, "network/index.html", {
+        'page_obj': page_obj
+    })
+
+
+@login_required
+def following(request):
+    """ Displays posts of followed people plus button to add new post. """
+    
+    # get list of filtered posts and paginate (10 posts / page)
+    post_list = request.user.get_posts_of_followed_people()
     paginator = Paginator(post_list, 10)
     
     page_number = request.GET.get('page')
@@ -147,10 +162,10 @@ def follow(request, user_id):
             # follow
             if data['isfollowing']:
                 request.user.follow(p_user)
-                print('follow successful')
+                # print('follow successful')
             else:
                 request.user.unfollow(p_user)
-                print('unfollow successful')
+                # print('unfollow successful')
         else:
             print('no data')
         return HttpResponse(status=204) 

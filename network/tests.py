@@ -116,6 +116,41 @@ class PostTestCase(TestCase):
         self.assertEqual(u3.following.count(), 0)
 
 
+    def test_get_all_posts(self):
+        u1 = User.objects.get(username='u1')
+        u2 = User.objects.get(username='u2')
+        u3 = User.objects.get(username='u3')
+
+        p1 = Post.objects.get(pk=1)
+        p2 = Post.objects.get(pk=2)
+        p3 = Post.objects.get(pk=3)
+
+        all_posts = Post.get_all_posts()
+
+        self.assertEqual(list(all_posts), [p1, p2, p3])
+
+
+    def test_get_posts_of_followed_people(self):
+        u1 = User.objects.get(username='u1')
+        u2 = User.objects.get(username='u2')
+        u3 = User.objects.get(username='u3')
+
+        p1 = Post.objects.get(pk=1)
+        p2 = Post.objects.get(pk=2)
+        p3 = Post.objects.get(pk=3)
+
+        posts1 = u1.get_posts_of_followed_people()
+        posts2 = u2.get_posts_of_followed_people()
+        posts3 = u3.get_posts_of_followed_people()
+
+        self.assertEqual(list(posts1), [p3])
+        self.assertEqual(list(posts2), [p1, p2])
+        self.assertEqual(list(posts3), [])
+        
+        
+        
+        
+
 class CreateNewPostTestCase(TestCase):
     
     def setUp(self):
