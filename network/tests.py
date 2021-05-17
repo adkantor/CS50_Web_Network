@@ -135,6 +135,11 @@ class CreateNewPostTestCase(TestCase):
             'post_content': '',
         }
 
+
+    def tearDown(self):
+        client.logout()
+
+
     def test_create_valid_post(self):        
         response = client.post(
             reverse('posts'),
@@ -151,3 +156,124 @@ class CreateNewPostTestCase(TestCase):
             content_type='application/json'
         )
         self.assertEqual(response.status_code, 400)
+
+
+class FollowTestCase(TestCase):
+
+    def setUp(self):
+
+        # Create users
+        u1 = User.objects.create(username='u1')
+        u1.set_password('12345')
+        u1.save()
+        u2 = User.objects.create(username='u2')
+        # log in u1
+        client.login(username='u1', password='12345')
+
+        # Create PUT payloads
+        self.payload_follow = {
+            'isfollowing': True,
+        }
+        self.payload_unfollow = {
+            'isfollowing': False,
+        }
+
+
+    def tearDown(self):
+        client.logout()
+
+
+    def test_get_status(self):
+
+        u1 = User.objects.get(username='u1')
+        u2 = User.objects.get(username='u2')
+
+        # test initial status --> not following
+        response = client.get(reverse('follow', kwargs={'user_id': u2.id}))
+        data = response.json()
+        self.assertFalse(data['isfollowing'])
+        self.assertEqual(response.status_code, 200)
+        # make u1 follow u2
+        u1.follow(u2)
+        response = client.get(reverse('follow', kwargs={'user_id': u2.id}))
+        data = response.json()
+        self.assertTrue(data['isfollowing'])
+        self.assertEqual(response.status_code, 200)        
+
+
+    def test_toggle_status(self):
+
+        u1 = User.objects.get(username='u1')
+        u2 = User.objects.get(username='u2')
+
+        # reset follow status
+        u1.unfollow(u2)
+        self.assertFalse(u1.is_following(u2))
+
+        # follow
+        response = client.put(
+            reverse('follow', kwargs={'user_id': u2.id}),
+            data=json.dumps(self.payload_follow),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertTrue(u1.is_following(u2))
+
+        # follow again
+        response = client.put(
+            reverse('follow', kwargs={'user_id': u2.id}),
+            data=json.dumps(self.payload_follow),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertTrue(u1.is_following(u2))
+
+        # unfollow
+        response = client.put(
+            reverse('follow', kwargs={'user_id': u2.id}),
+            data=json.dumps(self.payload_unfollow),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(u1.is_following(u2))
+
+        # unfollow again
+        response = client.put(
+            reverse('follow', kwargs={'user_id': u2.id}),
+            data=json.dumps(self.payload_unfollow),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(u1.is_following(u2))
+
+
+    def test_invalid_method(self):
+
+        u1 = User.objects.get(username='u1')
+        u2 = User.objects.get(username='u2')
+
+        response = client.post(
+            reverse('follow', kwargs={'user_id': u2.id}),
+            data=json.dumps(self.payload_follow),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+    def test_get_status_invalid_user(self):
+
+        response = client.get(reverse('follow', kwargs={'user_id': 3}))
+        self.assertEqual(response.status_code, 404)
+
+
+    def test_toggle_status_invalid_user(self):
+
+        response = client.put(
+            reverse('follow', kwargs={'user_id': 3}),
+            data=json.dumps(self.payload_follow),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 404)
+
+
+# https://realpython.com/test-driven-development-of-a-django-restful-api/

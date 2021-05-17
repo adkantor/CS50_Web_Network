@@ -4,7 +4,25 @@ from django.db import models
 
 class User(AbstractUser):
     followed_by = models.ManyToManyField('self', blank=True, related_name='following', symmetrical=False)
+    image = models.ImageField(upload_to='images/', null=True)
 
+    def is_following(self, another_user):
+        """ Returns True if this user is following another_user. """
+        return another_user in self.following.all()
+
+    def follow(self, another_user):
+        """ Makes this user follow another_user. """
+        # if not yet following but instructed to follow
+        if not self.is_following(another_user):
+            another_user.followed_by.add(self)
+            another_user.save()
+
+    def unfollow(self, another_user):
+        """ Makes this user unfollow another_user. """
+        # if not yet following but instructed to follow
+        if self.is_following(another_user):
+            another_user.followed_by.remove(self)
+            another_user.save()
 
 class Post(models.Model):
     """ Class to represent a post. """

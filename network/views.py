@@ -77,6 +77,28 @@ def register(request):
         return render(request, "network/register.html")
 
 
+def profiles(request, user_id):
+    """ Shows a profile page specific to the user given as parameter. """
+    
+    # get user
+    p_user = User.objects.get(pk=user_id) 
+
+    # get list of all posts of the user and paginate (10 posts / page)
+    post_list = Post.objects.filter(created_by=p_user).order_by('-created_time')
+    paginator = Paginator(post_list, 10)
+    
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, "network/profile.html", {
+        'p_user': p_user,
+        'page_obj': page_obj
+    })
+
+
+##############
+# API ROUTES #
+##############
+
 @login_required
 def create_post(request):
     
@@ -100,3 +122,41 @@ def create_post(request):
     post.save()
 
     return JsonResponse({"message": "Post created successfully."}, status=201) 
+
+
+@login_required
+def follow(request, user_id):
+
+    # Query for requested user
+    try:
+        p_user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found."}, status=404)
+
+    # Return follow status: True if logged in user is following profile user
+    if request.method == "GET":
+        
+        return JsonResponse({
+            'isfollowing': request.user.is_following(p_user)
+        })
+
+    # Update following: if True then logged in user will follow profile user
+    elif request.method == "PUT":
+        data = json.loads(request.body)
+        if data.get('isfollowing') is not None:
+            # follow
+            if data['isfollowing']:
+                request.user.follow(p_user)
+                print('follow successful')
+            else:
+                request.user.unfollow(p_user)
+                print('unfollow successful')
+        else:
+            print('no data')
+        return HttpResponse(status=204) 
+
+    # follow must be via GET or PUT 
+    else:
+        return JsonResponse({
+            "error": "GET or PUT request required."
+        }, status=400)
