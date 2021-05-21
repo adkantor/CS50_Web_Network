@@ -115,6 +115,36 @@ def profiles(request, user_id):
 ##############
 
 @login_required
+def post(request, post_id):
+    # Query for requested post
+    try:
+        post = Post.objects.get(created_by=request.user, pk=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({"error": "Post not found."}, status=404)
+
+    # Return post contents
+    if request.method == "GET":
+        return JsonResponse(post.serialize())
+
+    # Update post data
+    elif request.method == "PUT":
+        print('PUT called')
+        data = json.loads(request.body)
+        print(data)
+        if data.get("post_content") is not None:
+            print(data["post_content"])
+            post.content = data["post_content"]
+            post.save()
+        return HttpResponse(status=204)
+
+    # post must be via GET or PUT
+    else:
+        return JsonResponse({
+            "error": "GET or PUT request required."
+        }, status=400)
+ 
+
+@login_required
 def create_post(request):
     
     # creating a new post must be via POST

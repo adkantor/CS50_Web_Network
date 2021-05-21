@@ -38,6 +38,15 @@ class Post(models.Model):
     def __str__(self):
         return f'{self.created_by} - {self.content[:50]}'
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "created_by": self.created_by.id,
+            "created_time": self.created_time.strftime("%b %d %Y, %I:%M %p"), #[user.email for user in self.recipients.all()]
+            "content": self.content,
+            "liked_by": [user.id for user in self.liked_by.all()]
+        }
+
     @staticmethod
     def get_all_posts():
         """ Returns all posts in reverse order """
