@@ -130,9 +130,7 @@ def post(request, post_id):
     elif request.method == "PUT":
         print('PUT called')
         data = json.loads(request.body)
-        print(data)
         if data.get("post_content") is not None:
-            print(data["post_content"])
             post.content = data["post_content"]
             post.save()
         return HttpResponse(status=204)

@@ -8,54 +8,42 @@ from .models import User, Post
 # initialize the APIClient app
 client = Client()
 
-class PagesTestCase(TestCase):
+
+class IndexPageViewTestCase(TestCase):
 
     def setUp(self):
 
         # Create users
-        u1 = User.objects.create(username='u1')
-        u2 = User.objects.create(username='u2')
-        u3 = User.objects.create(username='u3')
-
-        # create posts
-        p1 = Post.objects.create(created_by=u1)
-        p2 = Post.objects.create(created_by=u1)
-        p3 = Post.objects.create(created_by=u2)
-
-        # add likes
-        u1.liked_posts.add(p3)
-        u3.liked_posts.add(p1)
-        u3.liked_posts.add(p2)
-        u3.liked_posts.add(p3)
-
-        # create follows
-        u1.following.add(u2)
-        u1.following.add(u3)
-        u2.following.add(u1)
+        u1 = User.objects.create(username='u1')        
+        # create  posts
+        for _ in range(25):
+            Post.objects.create(created_by=u1)
 
 
-    def test_index(self):
-
-        # Send get request to index page and store response
+    def test_view_url_exists_at_proper_location(self):
+        """ Tests whether page is properly loaded. """        
         response = client.get("/")
+        self.assertEqual(response.status_code, 200)        
 
-        # Make sure status code is 200
+
+    def test_view_url_by_name(self):
+        """ Tests whether page is accessible by name. """
+        response = client.get(reverse('index'))
         self.assertEqual(response.status_code, 200)
 
-        # Make sure three posts are returned in the context
-        self.assertEqual(len(response.context["page_obj"]), 3)
+
+    def test_view_uses_correct_template(self):
+        """ Tests whether page uses correct template. """
+        response = client.get(reverse('index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'network/index.html')
 
 
-    def test_index_pagination(self):
-        # another create user
-        u4 = User.objects.create(username='u4')
-        # create more posts
-        for _ in range(25):
-            Post.objects.create(created_by=u4)
-
-        # Send get request to index page without parameter and store response
+    def test_view_pagination(self):
+        """ Tests page pagination. """
         response = client.get("/")
-        # Make sure 10 posts are returned in the context
+        
+        # Request without argument: make sure 10 posts are returned in the context
         self.assertEqual(len(response.context["page_obj"]), 10)
 
         # Send get request to index page for page 1 and store response
@@ -70,8 +58,74 @@ class PagesTestCase(TestCase):
 
         # Send get request to index page for page 3 and store response
         response = client.get("/?page=3")
-        # Make sure 8 posts are returned in the context
-        self.assertEqual(len(response.context["page_obj"]), 8)
+        # Make sure 5 posts are returned in the context
+        self.assertEqual(len(response.context["page_obj"]), 5)
+
+
+
+class UnauthenticatedFollowingPageViewTestCase(TestCase):
+
+    def test_following_non_authenticated(self):
+        """ Tests whether Following page is unreachable by non-authenticated user. """
+        response = client.get("/following")
+        # Make sure status code is 302: redirect to /accounts/login/?next=/following
+        self.assertEqual(response.status_code, 302)
+
+
+class FollowingPageViewTestCase(TestCase):
+
+    def setUp(self):
+
+        # Create users
+        u1 = User.objects.create(username='u1')
+        u2 = User.objects.create(username='u2')
+        u3 = User.objects.create(username='u3')
+        u4 = User.objects.create(username='u4')        
+
+        # create posts
+        p1 = Post.objects.create(created_by=u1)
+        p2 = Post.objects.create(created_by=u1)
+        p3 = Post.objects.create(created_by=u2)
+        for _ in range(25):
+            Post.objects.create(created_by=u4)
+
+        # add likes
+        u1.liked_posts.add(p3)
+        u3.liked_posts.add(p1)
+        u3.liked_posts.add(p2)
+        u3.liked_posts.add(p3)
+
+        # create follows
+        u1.following.add(u2)
+        u1.following.add(u3)
+        u2.following.add(u1)
+        u1.following.add(u4)
+
+        # log in user 1
+        client.force_login(u1)
+
+
+    def test_view_url_exists_at_proper_location(self):
+        """ Tests whether page is properly loaded. """        
+        response = client.get("/following")
+        self.assertEqual(response.status_code, 200)
+
+
+    def test_view_url_by_name(self):
+        """ Tests whether page is accessible by name. """
+        response = client.get(reverse('following'))
+        self.assertEqual(response.status_code, 200)
+
+
+    def test_view_uses_correct_template(self):
+        """ Tests whether page uses correct template. """
+        response = client.get(reverse('following'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'network/index.html')
+
+
+class ControlsTestCase(TestCase):
+    pass
 
 
 class PostTestCase(TestCase):
@@ -84,9 +138,9 @@ class PostTestCase(TestCase):
         u3 = User.objects.create(username='u3')
 
         # create posts
-        p1 = Post.objects.create(created_by=u1)
-        p2 = Post.objects.create(created_by=u1)
-        p3 = Post.objects.create(created_by=u2)
+        p1 = Post.objects.create(created_by=u1, content='abc')
+        p2 = Post.objects.create(created_by=u1, content='def')
+        p3 = Post.objects.create(created_by=u2, content='ghi')
 
         # add likes
         u1.liked_posts.add(p3)
@@ -100,12 +154,26 @@ class PostTestCase(TestCase):
         u2.following.add(u1)
 
 
+    def test_text_content(self):
+        p1 = Post.objects.get(id=1)
+        p2 = Post.objects.get(id=2)
+        p3 = Post.objects.get(id=3)
+        
+        content1 = f'{p1.content}'
+        content2 = f'{p2.content}'
+        content3 = f'{p3.content}'
+        
+        self.assertEqual(content1, 'abc')
+        self.assertEqual(content2, 'def')
+        self.assertEqual(content3, 'ghi')
+
 
     def test_posts_count(self):
         u1 = User.objects.get(username='u1')
         u2 = User.objects.get(username='u2')
         u3 = User.objects.get(username='u3')
 
+        self.assertEqual(Post.objects.all().count(), 3)
         self.assertEqual(u1.posts.count(), 2)
         self.assertEqual(u2.posts.count(), 1)
         self.assertEqual(u3.posts.count(), 0)
