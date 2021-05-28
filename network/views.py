@@ -118,7 +118,7 @@ def profiles(request, user_id):
 def post(request, post_id):
     # Query for requested post
     try:
-        post = Post.objects.get(created_by=request.user, pk=post_id)
+        post = Post.objects.get(pk=post_id)
     except Post.DoesNotExist:
         return JsonResponse({"error": "Post not found."}, status=404)
 
@@ -128,10 +128,16 @@ def post(request, post_id):
 
     # Update post data
     elif request.method == "PUT":
-        print('PUT called')
         data = json.loads(request.body)
         if data.get("post_content") is not None:
             post.content = data["post_content"]
+            post.save()
+        if data.get("liking") is not None:
+            liking = data["liking"]
+            if liking:
+                post.liked_by.add(request.user)
+            else:
+                post.liked_by.remove(request.user)
             post.save()
         return HttpResponse(status=204)
 

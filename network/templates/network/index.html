@@ -12,108 +12,12 @@
     <div class="posts">
 
         {# Pagination #}
-        <nav aria-label="...">
-            <ul class="pagination  justify-content-center">
-                
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.previous_page_number }}</a>
-                    </li>
-                    <li class="page-item active" aria-current="page">
-                        <a class="page-link" href="?page={{ page_obj.number }}">{{ page_obj.number }} <span class="sr-only">(current)</span></a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                    </li>
-                    <li class="page-item active" aria-current="page">
-                        <a class="page-link" href="#">1 <span class="sr-only">(current)</span></a>
-                    </li>
-                {% endif %}
-
-
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.next_page_number }}</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Next</a>
-                    </li>
-                {% endif %}
-
-            </ul>
-        </nav>
+        {% include "network/pagination.html" %}
 
 
         {# Posts #}
-        {% for post in page_obj %}
-            <div class="card">
-                <div class="card-body">
-                    <a href={% url 'profiles' post.created_by.id %} class="link-dark text-decoration-none">
-                        <h5 class="card-title">{{ post.created_by }}</h5>
-                    </a>
-                    {% if user.is_authenticated and user.id == post.created_by.id %}
-                        <button type="button" id="btn-create-post" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#new-post-modal" data-id="{{post.id}}">Edit post</button>
-                    {% endif %}
-                    <p class="card-text" id="post-content-{{ post.id }}">{{ post.content }}</p>
-                    <p class="card-text"><small class="text-muted">{{ post.created_time }}</small></p>
-                    <p class="card-text"><i class="fas fa-heart fa-sm likes-icon"></i>{{ post.liked_by.all.count }}</p>
-                </div>
-            </div>
-        {% endfor %}
+        {% include "network/posts.html" %}
 
     </div>
-
-    <script>
-        $('#new-post-modal').on('show.bs.modal', function (event) {
-            const button = $(event.relatedTarget); // Button that triggered the modal           
-
-            const id = button.data('id');
-
-            // get post content from server
-            fetch(`/posts/${id}`)
-            .then(response => response.json())
-            .then(post => {              
-                // update modal fields
-                const modal = $(this);
-                modal.find('.modal-title').text('Update Post');
-                modal.find('.modal-body textarea').text(post.content);
-
-                document.querySelector('#save-post').removeEventListener('click', submit_post);
-                document.querySelector('#save-post').addEventListener('click', () => {
-                    // update post in database
-                    update_post(post.id);
-                    // update post un page (without reloading page)
-                    update_page(id);
-                });
-            })
-            // Catch any errors and log them to the console
-            .catch(error => {
-                console.log('Error:', error);
-            });
-        });
-
-        function update_page(id) {            
-            // get post content from server
-            fetch(`/posts/${id}`)
-            .then(response => response.json())
-            .then(post => {
-                // update relevant paragraph
-                const postContent = document.querySelector(`#post-content-${id}`);
-                postContent.value = post.content;
-            })
-            // Catch any errors and log them to the console
-            .catch(error => {
-                console.log('Error:', error);
-            });        
-        }
-    </script>
 
 {% endblock %}
