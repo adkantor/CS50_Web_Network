@@ -36,7 +36,7 @@ class Post(models.Model):
     liked_by = models.ManyToManyField(User, blank=True, related_name='liked_posts')
 
     def __str__(self):
-        return f'{self.created_by} - {self.content[:50]}'
+        return f'{self.id}: {self.created_by} - {self.content[:50]}'
 
     def serialize(self):
         return {
