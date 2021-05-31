@@ -811,6 +811,6 @@ class ControlsTestCaseLoggedOut(LiveServerTestCase):
             new_post_button = self.selenium.find_element_by_id("btn-create-post")
 
 
-
+###########  NOTES  ###########
 
 # https://realpython.com/test-driven-development-of-a-django-restful-api/
