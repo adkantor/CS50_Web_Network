@@ -129,9 +129,15 @@ def post(request, post_id):
     # Update post data
     elif request.method == "PUT":
         data = json.loads(request.body)
+        
         if data.get("post_content") is not None:
-            post.content = data["post_content"]
-            post.save()
+            # if request user is not the creator of the post then deny access
+            if post.created_by != request.user:
+                return HttpResponse(status=403)
+            else:
+                post.content = data["post_content"]
+                post.save()
+        
         if data.get("liking") is not None:
             liking = data["liking"]
             if liking:
@@ -139,6 +145,7 @@ def post(request, post_id):
             else:
                 post.liked_by.remove(request.user)
             post.save()
+        
         return HttpResponse(status=204)
 
     # post must be via GET or PUT

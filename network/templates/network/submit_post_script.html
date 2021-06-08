@@ -6,7 +6,7 @@
     function submit_post() {
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         // get post text
-        const postContent =  document.querySelector('#post-content').text;                
+        const postContent =  document.querySelector('#post-content').value;             
         
         // make API POST request
         const request = new Request(

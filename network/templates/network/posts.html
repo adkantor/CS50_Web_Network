@@ -71,6 +71,9 @@
         const button = $(event.relatedTarget); // Button that triggered the modal           
 
         const id = button.data('id');
+        if(id === undefined) {
+            return;
+        }
 
         // get post content from server
         fetch(`/posts/${id}`)
@@ -102,7 +105,7 @@
         .then(post => {
             // update relevant paragraph
             const postContent = document.querySelector(`#post-content-${id}`);
-            postContent.value = post.content;
+            postContent.innerHTML = post.content;
         })
         // Catch any errors and log them to the console
         .catch(error => {
